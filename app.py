@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Load data
-df = pd.read_csv("Amazon Sale Report Data cleaned.csv")
+df = pd.read_csv("amazon_sale_report.csv")
 
 st.title("📊 Amazon Sales Dashboard")
 
