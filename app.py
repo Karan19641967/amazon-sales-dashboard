@@ -1,40 +1,54 @@
-# app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Load data
-df = pd.read_csv("amazon_sale_report.csv")
+# Load the data
+@st.cache
+def load_data():
+    data = pd.read_csv('amazon_sale_report.csv')
+    return data
 
-st.title("📊 Amazon Sales Dashboard")
+# Main function to run the app
+def main():
+    st.title("Amazon Sales Report Dashboard")
 
-# Sidebar Filters
-selected_state = st.sidebar.selectbox("Select State", df["ship-state"].unique())
-filtered_df = df[df["ship-state"] == selected_state]
+    # Load data
+    data = load_data()
 
-# KPIs
-total_sales = filtered_df["total-amount"].sum()
-total_orders = filtered_df["order-id"].nunique()
-st.metric("Total Sales", f"₹{total_sales:,.2f}")
-st.metric("Total Orders", total_orders)
+    # Display the data
+    st.subheader("Data Overview")
+    st.write(data.head())
 
-# Plotly Bar Chart
-st.subheader("Sales by Category")
-fig1 = px.bar(filtered_df, x="category", y="total-amount", color="category", title="Category-wise Sales")
-st.plotly_chart(fig1)
+    # Sales by Status
+    st.subheader("Sales by Status")
+    sales_status = data.groupby('Status')['Amount'].sum().reset_index()
+    fig1 = px.bar(sales_status, x='Status', y='Amount', title='Total Sales by Status')
+    st.plotly_chart(fig1)
 
-# Seaborn Heatmap
-st.subheader("Heatmap - Category vs Payment Type")
-fig2, ax = plt.subplots()
-pivot = filtered_df.pivot_table(index="category", columns="payment-type", values="total-amount", aggfunc='sum', fill_value=0)
-sns.heatmap(pivot, annot=True, fmt=".0f", cmap="Blues", ax=ax)
-st.pyplot(fig2)
+    # Sales by Fulfilment
+    st.subheader("Sales by Fulfilment")
+    sales_fulfilment = data.groupby('Fulfilment')['Amount'].sum().reset_index()
+    fig2 = px.pie(sales_fulfilment, names='Fulfilment', values='Amount', title='Sales Distribution by Fulfilment')
+    st.plotly_chart(fig2)
 
-# Matplotlib Pie Chart
-st.subheader("Payment Type Distribution")
-fig3, ax = plt.subplots()
-filtered_df["payment-type"].value_counts().plot.pie(autopct="%1.1f%%", ax=ax)
-ax.set_ylabel("")
-st.pyplot(fig3)
+    # Seaborn heatmap for Quantity by Category and Size
+    st.subheader("Quantity Heatmap by Category and Size")
+    heatmap_data = data.pivot_table(values='Qty', index='Category', columns='Size', aggfunc='sum', fill_value=0)
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(heatmap_data, annot=True, fmt='g', cmap='viridis')
+    st.pyplot(plt)
+
+    # Matplotlib line chart for Amount over Order ID
+    st.subheader("Sales Amount Over Order ID")
+    plt.figure(figsize=(10, 6))
+    plt.plot(data['Order ID'], data['Amount'], marker='o')
+    plt.title('Sales Amount Over Order ID')
+    plt.xlabel('Order ID')
+    plt.ylabel('Amount')
+    plt.xticks(rotation=45)
+    st.pyplot(plt)
+
+if __name__ == "__main__":
+    main()
